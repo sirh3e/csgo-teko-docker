@@ -1,0 +1,40 @@
+version: '3.1'
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    restart: always
+    environment:
+      POSTGRES_DB: database-timescale
+      POSTGRES_USER: database-timescale-reporter
+      POSTGRES_PASSWORD: mypassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - database_timescale_db_data:/var/lib/postgresql/data
+    networks:
+      - database_timescale_db_network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: database_timescale_rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - database_timescale_rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - database_timescale_rabbitmq_network
+
+volumes:
+  database_timescale_db_data: {}
+  database_timescale_rabbitmq_data: {}
+
+networks:
+  database_timescale_db_network:
+    driver: bridge
+  database_timescale_rabbitmq_network:
