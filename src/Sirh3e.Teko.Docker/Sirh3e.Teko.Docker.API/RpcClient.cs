@@ -8,11 +8,11 @@ namespace Sirh3e.Teko.Docker.API;
 public class RpcClient : IDisposable
 {
     private const string QUEUE_NAME = "rpc_queue";
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> callbackMapper = new();
+    private readonly IModel channel;
 
     private readonly IConnection connection;
-    private readonly IModel channel;
     private readonly string replyQueueName;
-    private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> callbackMapper = new();
 
     public RpcClient()
     {
@@ -20,7 +20,7 @@ public class RpcClient : IDisposable
         {
             HostName = "rabbitmq",
             UserName = "user",
-            Password = "password",
+            Password = "password"
         };
 
         connection = factory.CreateConnection();
@@ -38,8 +38,14 @@ public class RpcClient : IDisposable
         };
 
         channel.BasicConsume(consumer: consumer,
-                             queue: replyQueueName,
-                             autoAck: true);
+            queue: replyQueueName,
+            autoAck: true);
+    }
+
+    public void Dispose()
+    {
+        channel.Close();
+        connection.Close();
     }
 
     public Task<string> CallAsync(string message, CancellationToken cancellationToken = default)
@@ -52,18 +58,12 @@ public class RpcClient : IDisposable
         var tcs = new TaskCompletionSource<string>();
         callbackMapper.TryAdd(correlationId, tcs);
 
-        channel.BasicPublish(exchange: string.Empty,
-                             routingKey: QUEUE_NAME,
-                             basicProperties: props,
-                             body: messageBytes);
+        channel.BasicPublish(string.Empty,
+            QUEUE_NAME,
+            props,
+            messageBytes);
 
         cancellationToken.Register(() => callbackMapper.TryRemove(correlationId, out _));
         return tcs.Task;
-    }
-
-    public void Dispose()
-    {
-        channel.Close();
-        connection.Close();
     }
 }

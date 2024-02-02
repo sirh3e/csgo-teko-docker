@@ -23,7 +23,7 @@ app.MapGet("/api/fib/{number}", async (ulong number) =>
     {
         var client = new RpcClient();
         var message = await client.CallAsync(number.ToString());
-        
+
         return ulong.Parse(message);
     })
     .WithName("GetFib")
