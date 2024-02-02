@@ -30,6 +30,29 @@ services:
     networks:
       - database_timescale_rabbitmq_network
 
+  api:
+    build:
+      context: ./../src/Sirh3e.Teko.Docker/Sirh3e.Teko.Docker.API
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "5080:80"
+      - "5081:8080"
+    depends_on:
+      - rabbitmq
+      - worker
+    networks:
+      - database_timescale_rabbitmq_network
+  worker:
+    build:
+      context: ./../src/Sirh3e.Teko.Docker/Sirh3e.Teko.Docker.Worker
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - rabbitmq
+    networks:
+      - database_timescale_rabbitmq_network
+
 volumes:
   database_timescale_db_data: {}
   database_timescale_rabbitmq_data: {}
@@ -38,3 +61,4 @@ networks:
   database_timescale_db_network:
     driver: bridge
   database_timescale_rabbitmq_network:
+    driver: bridge

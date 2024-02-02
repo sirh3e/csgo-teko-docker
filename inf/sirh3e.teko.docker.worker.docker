@@ -1,0 +1,18 @@
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
+WORKDIR /app
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY ["src/Sirh3e.Teko.Docker/Sirh3e.Teko.Docker.Worker/Sirh3e.Teko.Docker.Worker.csproj", "/src/Sirh3e.Teko.Docker/Sirh3e.Teko.Docker.Worker/"]
+RUN dotnet restore "/src/Sirh3e.Teko.Docker/Sirh3e.Teko.Docker.Worker/Sirh3e.Teko.Docker.Worker.csproj"
+COPY . .
+WORKDIR "/src/Sirh3e.Teko.Docker/Sirh3e.Teko.Docker.Worker/"
+RUN dotnet build "Sirh3e.Teko.Docker.Worker.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "Sirh3e.Teko.Docker.Worker.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "Sirh3e.Teko.Docker.Worker.dll"]
